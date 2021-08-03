@@ -2,18 +2,18 @@
 
 This repository is the pipeline of **electrophysiological** and **morphological** analysis.
 The electrophysiological analysis includes plotting trace, extracting electrophysiological features according to NWB files,
-and morphological analysis includes plotting morphology, extracting morphological features from SWC files.
+and morphological analysis includes plotting morphology, extracting morphological features from SWC files, and converting formats.
 
 
 # Sub-projects
 
 ## Cell
 
-The electrophysiological and morphological analysis of article [Integrated Morphoelectric and Transcriptomic Classification of Cortical GABAergic Cells][1]
+The electrophysiological and morphological analysis of article [Integrated Morphoelectric and Transcriptomic Classification of Cortical GABAergic Cells][1].
 
 ## Nature
 
-The analysis pipeline of article [Phenotypic variation of transcriptomic cell types in mouse motor cortex][2]
+The analysis pipeline of article [Phenotypic variation of transcriptomic cell types in mouse motor cortex][2].
 
 ## CJW
 
