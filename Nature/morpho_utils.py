@@ -29,7 +29,11 @@ from neuron_morphology.constants import AXON, BASAL_DENDRITE, SOMA
 from neuron_morphology.feature_extractor.data import Data
 from neuron_morphology.feature_extractor.feature_extractor import FeatureExtractor
 from neuron_morphology.features.statistics.coordinates import COORD_TYPE_SPECIALIZATIONS
-COORD_TYPE_SPECIALIZATIONS
+from neuron_morphology.feature_extractor.feature_specialization import FeatureSpecialization
+from neuron_morphology.feature_extractor.mark import RequiresReferenceLayerDepths
+
+from Cell.morpho_utils import (AboveSomaSpec, BelowSomaSpec, AllLayerSpec as _CellAllLayerSpec,
+                               nodes_ratio, length_ratio)
 
 
 custom_features = [
@@ -133,3 +137,16 @@ def get_required_features_from_swcs(swc_iter,
             continue
         features = dict(get_required_features(feature_extraction_run.results))
         yield features
+
+
+class AllLayerSpec(_CellAllLayerSpec):
+    kwargs={'filter_layers': ['L1', 'L2/3', 'L5', 'L6', 'wm']}
+
+layer_features = [
+    nested_specialize(nodes_ratio, [{AboveSomaSpec}, {AxonSpec}]),
+    nested_specialize(nodes_ratio, [{BelowSomaSpec}, {AxonSpec}]),
+    nested_specialize(nodes_ratio, [{AllLayerSpec}, {AxonSpec}]),
+    nested_specialize(length_ratio, [{AboveSomaSpec}, {AxonSpec}]),
+    nested_specialize(length_ratio, [{BelowSomaSpec}, {AxonSpec}]),
+    nested_specialize(length_ratio, [{AllLayerSpec}, {AxonSpec}])
+]
