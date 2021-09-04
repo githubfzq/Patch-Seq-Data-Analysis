@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.colors import to_hex
+import numpy as np
 
 
 with open('../electro_required_features.pkl', 'rb') as _data_f:
@@ -194,12 +195,50 @@ def plot_nwb_trace(nwb: str, out_dir: Path, min_max_i=None, min_max_v=None):
             fig.clf()
             plt.close('all')
 
+def get_spiking_histogram_with_half_rate(nwb_path, t_range=(0.5, 1.5), num_bins=50):
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        dataset = create_ephys_data_set(nwb_file=nwb_path)
+        drop_failed_sweeps(dataset)
+        cell_features, sweep_features, cell_record, sweep_records, _, _ = extract_data_set_features(
+            dataset, subthresh_min_amp=-100
+        )
+    spike_sweep_features = cell_features['long_squares']['spiking_sweeps']
+    sweep_rates = np.array([sweep['avg_rate'] for sweep in spike_sweep_features])
+    diff_half_max_rates = abs(sweep_rates-sweep_rates.max()/2)
+    select_sweep_id = diff_half_max_rates.argmin()
+    spiking_t = np.array([spike['peak_t'] for spike in spike_sweep_features[select_sweep_id]['spikes']])
+    hist, bin_edges = np.histogram(spiking_t, bins=num_bins, range=t_range)
+    # compute ISI
+    spiking_t = spiking_t.compress((spiking_t>=t_range[0])&(spiking_t<=t_range[1]))
+    isi = np.diff(spiking_t)
+    adapt_index = (isi[1:]-isi[:-1])/(isi[1:]+isi[:-1])
+    isi_cv = isi.std()/isi.mean()
+    return {
+        'spiking_t': spiking_t,
+        'spiking_hist': hist,
+        'isi': isi,
+        'adapt_index': adapt_index,
+        'abs_AI': abs(adapt_index),
+        'avg_adapt_index': adapt_index.mean(),
+        'avg_abs_AI': abs(adapt_index).mean(),
+        'isi_cv': isi_cv
+    }
+
 if __name__ == '__main__':
-    test_nwb_path = 'nwb/sub-601462951_ses-601790945_icephys.nwb'
-    test_data_set = create_ephys_data_set(nwb_file=test_nwb_path)
-    drop_failed_sweeps(test_data_set)
-    test_sweep_table = test_data_set.sweep_table
-    test_sweep_numbers = test_sweep_table[(test_sweep_table['stimulus_name'] == 'Long Square') & (
-            test_sweep_table['clamp_mode'] == 'CurrentClamp')]['sweep_number'].tolist()
-    fig = plot_iclamp_sweep(test_data_set, test_sweep_numbers, 31, show_full_sweep=True)
-    plt.show()
+    test_nwb_path = 'nwb/sub-637383947_ses-639389976_icephys.nwb'
+    # test_data_set = create_ephys_data_set(nwb_file=test_nwb_path)
+    # drop_failed_sweeps(test_data_set)
+    # test_sweep_table = test_data_set.sweep_table
+    # test_sweep_numbers = test_sweep_table[(test_sweep_table['stimulus_name'] == 'Long Square') & (
+    #         test_sweep_table['clamp_mode'] == 'CurrentClamp')]['sweep_number'].tolist()
+    # test_cell_features, test_sweep_features, test_cell_record, test_sweep_records, _, _ = extract_data_set_features(
+    #     test_data_set, subthresh_min_amp=-100)
+    # test_rates = np.array([sweep['avg_rate'] for sweep in test_cell_features['long_squares']['spiking_sweeps']])
+    # diff_half_max_rates = abs(test_rates-test_rates.max()/2)
+    # select_sweep_id = diff_half_max_rates.argmin()
+    # spiking_t = np.array([spike['peak_t']
+    #                       for spike in test_cell_features['long_squares']['spiking_sweeps'][select_sweep_id]['spikes']])
+    # hist, bin_edges = np.histogram(spiking_t, bins=50, range=(0.5, 1.5))
+    res = get_spiking_histogram_with_half_rate(test_nwb_path, (0.5, 1.1), 30)
+    print(res)
